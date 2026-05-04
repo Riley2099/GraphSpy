@@ -107,6 +107,12 @@ def get_entra_user_details(user_id):
             400,
         )
     batch_responses = json.loads(response["response_text"])["responses"]
+    # Check if any response has status 429 (throttled)
+    throttled_responses = [response for response in batch_responses if response["status"] == 429]
+    if len(throttled_responses) > 0:
+        logger.error(f"Request throttled (429) when trying to obtain user details of '{user_id}'.")
+        logger.error(response)
+        return f"[Error] Request throttled (429) by Microsoft when trying to obtain user details of '{user_id}'. Please try again later.", 429
     user_details_list = [
         r["body"]
         for r in batch_responses
@@ -123,3 +129,108 @@ def get_entra_user_details(user_id):
             continue
         user_details[r["id"]] = r["body"].get("value", [])
     return user_details
+
+
+@bp.get("/api/get_entra_group_details/<group_id>")
+def get_entra_group_details(group_id):
+    if not "access_token_id" in request.args:
+        return f"[Error] No access_token_id specified.", 400
+    access_token_id = request.args['access_token_id']
+    parsed_group_id = urllib.parse.quote_plus(group_id)
+    batch_body = {
+        "requests": [
+            {
+                "id": "groupDetails",
+                "method": "GET",
+                "url": f"/groups/{parsed_group_id}"
+            },
+            {
+                "id": "transitiveMembers",
+                "method": "GET",
+                "url": f"/groups/{parsed_group_id}/transitiveMembers"
+            },
+            {
+                "id": "owners",
+                "method": "GET",
+                "url": f"/groups/{parsed_group_id}/owners"
+            },
+            {
+                "id": "transitiveMemberOf",
+                "method": "GET",
+                "url": f"/groups/{parsed_group_id}/transitiveMemberOf"
+            },
+            {
+                "id": "drives",
+                "method": "GET",
+                "url": f"/groups/{parsed_group_id}/drives"
+            },
+            {
+                "id": "team",
+                "method": "GET",
+                "url": f"/groups/{parsed_group_id}/team"
+            },
+            {
+                "id": "sites",
+                "method": "GET",
+                "url": f"/groups/{parsed_group_id}/sites"
+            },
+            {
+                "id": "appRoleAssignments",
+                "method": "GET",
+                "url": f"/groups/{parsed_group_id}/appRoleAssignments"
+            }
+        ]
+    }
+    batch_uri = "https://graph.microsoft.com/v1.0/$batch"
+    batch_response = gspy_requests.generic_request(batch_uri, access_token_id, "POST", "json", batch_body)
+    if not (batch_response['response_status_code'] == 200 and batch_response['response_type'] == "json"):
+        logger.error(f"Something went wrong trying to obtain group details of '{group_id}'.")
+        logger.error(batch_response)
+        return f"[Error] Something went wrong trying to obtain group details of '{group_id}'. Received response status {batch_response['response_status_code']} and response type {batch_response['response_type']}", 400
+    batch_response_list = json.loads(batch_response['response_text'])["responses"]
+    # Check if any response has status 429 (throttled)
+    throttled_responses = [response for response in batch_response_list if response["status"] == 429]
+    if len(throttled_responses) > 0:
+        logger.error(f"Request throttled (429) when trying to obtain group details of '{group_id}'.")
+        logger.error(batch_response)
+        return f"[Error] Request throttled (429) by Microsoft when trying to obtain group details of '{group_id}'. Please try again later.", 429
+    group_details = [response["body"] for response in batch_response_list if response["id"] == "groupDetails" and response["status"] == 200]
+    if len(group_details) == 0:
+        logger.error(f"Something went wrong trying to obtain group details of '{group_id}'.")
+        logger.error(batch_response)
+        return f"[Error] Something went wrong trying to obtain group details of '{group_id}'.", 400
+    group_details = group_details[0]
+    for response in batch_response_list:
+        if response["id"] == "groupDetails":
+            continue
+        # Handle 404 errors gracefully (e.g., team might not exist for all groups)
+        if response["status"] == 200:
+            group_details[response["id"]] = response["body"]["value"] if "value" in response["body"] else response["body"]
+        else:
+            group_details[response["id"]] = []
+    return group_details
+
+@bp.get("/api/get_entra_groups")
+def get_entra_groups():
+    if not "access_token_id" in request.args:
+        return f"[Error] No access_token_id specified.", 400
+    access_token_id = request.args['access_token_id']
+    uri = f"https://graph.microsoft.com/v1.0/groups?$top=999&$expand=transitiveMembers($select=id,displayName,userPrincipalName)"
+    if "customize_properties" in request.args and request.args["customize_properties"] != " ":
+        uri += f"&$select={urllib.parse.quote_plus(request.args['customize_properties'])}"
+    groups_list = []
+    for x in range(5000):
+        response = gspy_requests.generic_request(uri, access_token_id, "GET", "text", "")
+        if response['response_status_code'] == 200 and response['response_type'] == "json":
+            response_json = json.loads(response['response_text'])
+            groups_list += response_json["value"]
+            logger.debug(f"Retrieved {len(response_json['value'])} groups. {len(groups_list)} total groups so far.")
+            if "@odata.nextLink" in response_json:
+                uri = response_json["@odata.nextLink"]
+            else:
+                logger.debug(f"All groups retrieved.")
+                break
+        else:
+            logger.error(response)
+            return f"[Error] Something went wrong trying to obtain Entra ID Groups. Received response status {response['response_status_code']} and response type {response['response_type']}", 400
+    return groups_list

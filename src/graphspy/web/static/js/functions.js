@@ -622,7 +622,11 @@ function getEntraUserDetails(access_token_id, user_id) {
 }
 
 function openUserDetailsModal(access_token_id, user_id) {
+    // Show loading cursor
+    $('html, body').css('cursor', 'wait');
     let entraUserDetails = getEntraUserDetails(access_token_id, user_id);
+    // Remove loading cursor
+    $('html, body').css('cursor', '');
     let modalBody = `
         <div class="row ms-0" id="user_details_header_overview">
             <h5>Overview</h5>
@@ -758,7 +762,7 @@ function openUserDetailsModal(access_token_id, user_id) {
         item.append($('<span class="text-light-emphasis"></span>').text(value));
         return item;
     }
-    let userDetailsOverview = $('#user_details_overview');
+    let userDetailsOverview = userGroupsModal.find('#user_details_overview');
     userDetailsOverview.append(createDetailItem("ID", entraUserDetails.id));
     userDetailsOverview.append(createDetailItem("Security ID", entraUserDetails.securityIdentifier));
     userDetailsOverview.append(createDetailItem("Name", entraUserDetails.displayName));
@@ -788,14 +792,14 @@ function openUserDetailsModal(access_token_id, user_id) {
     } else {
         userDetailsOverview.append(createDetailItem("Synced", "false"));
     }
-    $('#user_details_full').append(formatJsonCode(entraUserDetails));
+    userGroupsModal.find('#user_details_full').append(formatJsonCode(entraUserDetails));
     Prism.highlightAll();
 
-    if ($.fn.dataTable.isDataTable('#user_details_group_membership_table')) {
-        $('#user_details_group_membership_table').DataTable().destroy();
-        $('#user_details_group_membership_table').empty();
+    if ($.fn.dataTable.isDataTable(userGroupsModal.find('#user_details_group_membership_table')[0])) {
+        userGroupsModal.find('#user_details_group_membership_table').DataTable().destroy();
+        userGroupsModal.find('#user_details_group_membership_table').empty();
     }
-    let userDetailsGroupMembershipTable = new DataTable('#user_details_group_membership_table', {
+    let userDetailsGroupMembershipTable = new DataTable(userGroupsModal.find('#user_details_group_membership_table')[0], {
         data: entraUserDetails.transitiveMemberOf.filter(object => object["@odata.type"] == "#microsoft.graph.group"),
         columns: [
             {
@@ -806,10 +810,10 @@ function openUserDetailsModal(access_token_id, user_id) {
                 'width': '20px'
             },
             {
-                className: 'placeholder-control',
+                className: 'group-details-control',
                 orderable: false,
                 data: null,
-                defaultContent: '',
+                defaultContent: '<i class="fi fi-rr-member-search" style="cursor: pointer" title="View Group Details"></i>',
                 'width': '20px'
             },
             { data: 'displayName', title: "Display Name" },
@@ -844,11 +848,19 @@ function openUserDetailsModal(access_token_id, user_id) {
             Prism.highlightAll();
         }
     });
-    if ($.fn.dataTable.isDataTable('#user_details_role_membership_table')) {
-        $('#user_details_role_membership_table').DataTable().destroy();
-        $('#user_details_role_membership_table').empty();
+    userDetailsGroupMembershipTable.on('click', 'td.group-details-control', function (e) {
+        let tr = e.target.closest('tr');
+        let row = userDetailsGroupMembershipTable.row(tr);
+        let groupData = row.data();
+        if (groupData && groupData.id) {
+            openGroupDetailsModal(access_token_id, groupData.id);
+        }
+    });
+    if ($.fn.dataTable.isDataTable(userGroupsModal.find('#user_details_role_membership_table')[0])) {
+        userGroupsModal.find('#user_details_role_membership_table').DataTable().destroy();
+        userGroupsModal.find('#user_details_role_membership_table').empty();
     }
-    let userDetailsRoleMembershipTable = new DataTable('#user_details_role_membership_table', {
+    let userDetailsRoleMembershipTable = new DataTable(userGroupsModal.find('#user_details_role_membership_table')[0], {
         data: entraUserDetails.transitiveMemberOf.filter(object => object["@odata.type"] == "#microsoft.graph.directoryRole"),
         columns: [
             {
@@ -884,11 +896,11 @@ function openUserDetailsModal(access_token_id, user_id) {
             Prism.highlightAll();
         }
     });
-    if ($.fn.dataTable.isDataTable('#user_details_owned_devices_table')) {
-        $('#user_details_owned_devices_table').DataTable().destroy();
-        $('#user_details_owned_devices_table').empty();
+    if ($.fn.dataTable.isDataTable(userGroupsModal.find('#user_details_owned_devices_table')[0])) {
+        userGroupsModal.find('#user_details_owned_devices_table').DataTable().destroy();
+        userGroupsModal.find('#user_details_owned_devices_table').empty();
     }
-    let userDetailsOwnedDeviceTable = new DataTable('#user_details_owned_devices_table', {
+    let userDetailsOwnedDeviceTable = new DataTable(userGroupsModal.find('#user_details_owned_devices_table')[0], {
         data: entraUserDetails.ownedDevices,
         columns: [
             {
@@ -926,11 +938,11 @@ function openUserDetailsModal(access_token_id, user_id) {
             Prism.highlightAll();
         }
     });
-    if ($.fn.dataTable.isDataTable('#user_details_app_role_assignment_table')) {
-        $('#user_details_app_role_assignment_table').DataTable().destroy();
-        $('#user_details_app_role_assignment_table').empty();
+    if ($.fn.dataTable.isDataTable(userGroupsModal.find('#user_details_app_role_assignment_table')[0])) {
+        userGroupsModal.find('#user_details_app_role_assignment_table').DataTable().destroy();
+        userGroupsModal.find('#user_details_app_role_assignment_table').empty();
     }
-    let userDetailsAppRoleAssignmentTable = new DataTable('#user_details_app_role_assignment_table', {
+    let userDetailsAppRoleAssignmentTable = new DataTable(userGroupsModal.find('#user_details_app_role_assignment_table')[0], {
         data: entraUserDetails.appRoleAssignments,
         columns: [
             {
@@ -967,11 +979,11 @@ function openUserDetailsModal(access_token_id, user_id) {
             Prism.highlightAll();
         }
     });
-    if ($.fn.dataTable.isDataTable('#user_details_api_permissions_table')) {
-        $('#user_details_api_permissions_table').DataTable().destroy();
-        $('#user_details_api_permissions_table').empty();
+    if ($.fn.dataTable.isDataTable(userGroupsModal.find('#user_details_api_permissions_table')[0])) {
+        userGroupsModal.find('#user_details_api_permissions_table').DataTable().destroy();
+        userGroupsModal.find('#user_details_api_permissions_table').empty();
     }
-    let userDetailsApiPermissionsTable = new DataTable('#user_details_api_permissions_table', {
+    let userDetailsApiPermissionsTable = new DataTable(userGroupsModal.find('#user_details_api_permissions_table')[0], {
         data: entraUserDetails.oauth2PermissionGrants,
         columns: [
             {
@@ -1004,6 +1016,568 @@ function openUserDetailsModal(access_token_id, user_id) {
         }
         else {
             // Open this row
+            row.child(formatJsonCode(row.data())).show();
+            Prism.highlightAll();
+        }
+    });
+}
+
+function getEntraGroupDetails(access_token_id, group_id) {
+    let response = $.ajax({
+        type: "GET",
+        async: false,
+        url: `/api/get_entra_group_details/${encodeURIComponent(group_id)}?access_token_id=${access_token_id}`
+    });
+    if (response.status >= 400) {
+        bootstrapToast("Get Entra ID Group Details", response.responseText, "danger");
+        return;
+    }
+    return response.responseJSON;
+}
+
+function openGroupDetailsModal(access_token_id, group_id) {
+    // Show loading cursor
+    $('html, body').css('cursor', 'wait');
+    let entraGroupDetails = getEntraGroupDetails(access_token_id, group_id);
+    // Remove loading cursor
+    $('html, body').css('cursor', '');
+    if (!entraGroupDetails) {
+        return;
+    }
+    let modalBody = `
+        <div class="row ms-0" id="group_details_header_overview">
+            <h5>Overview</h5>
+            <ul id="group_details_overview" class="list-group">
+            </ul>
+        </div>
+        <div class="accordion" id="groupDetailsAccordion">
+          <div class="accordion-item">
+            <h2 class="accordion-header">
+              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-controls="collapseOne">
+                <b>Full details</b>
+              </button>
+            </h2>
+            <div id="collapseOne" class="accordion-collapse collapse" data-bs-parent="#groupDetailsAccordion">
+              <div class="accordion-body" id="group_details_full">
+              </div>
+            </div>
+          </div>
+        </div>
+        <hr>
+        <div class="row" id="group_details_header_members">
+            <h5>Transitive Members</h5>
+            <table id="group_details_transitive_members_table" class="table table-striped" style="width:100%">
+                <thead>
+                    <tr>
+                        <th></th>
+                        <th></th>
+                        <th>Display Name</th>
+                        <th>User Principal Name</th>
+                        <th>Mail</th>
+                        <th>Type</th>
+                    </tr>
+                </thead>
+            </table>
+        </div>
+        <hr>
+        <div class="row" id="group_details_header_owners">
+            <h5>Owners</h5>
+            <table id="group_details_owners_table" class="table table-striped" style="width:100%">
+                <thead>
+                    <tr>
+                        <th></th>
+                        <th></th>
+                        <th>Display Name</th>
+                        <th>User Principal Name</th>
+                        <th>Mail</th>
+                        <th>Type</th>
+                    </tr>
+                </thead>
+            </table>
+        </div>
+        <hr>
+        <div class="row" id="group_details_header_memberof">
+            <h5>Transitive Group Membership of this Group</h5>
+            <table id="group_details_transitive_memberof_table" class="table table-striped" style="width:100%">
+                <thead>
+                    <tr>
+                        <th></th>
+                        <th></th>
+                        <th>Display Name</th>
+                        <th>Description</th>
+                        <th>Security Enabled</th>
+                        <th>Dynamic</th>
+                    </tr>
+                </thead>
+            </table>
+        </div>
+        <hr>
+        <div class="row" id="group_details_header_sites">
+            <h5>Sites</h5>
+            <table id="group_details_sites_table" class="table table-striped" style="width:100%">
+                <thead>
+                    <tr>
+                        <th></th>
+                        <th></th>
+                        <th>Display Name</th>
+                        <th>Web URL</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+            </table>
+        </div>
+        <hr>
+        <div class="row" id="group_details_header_drives">
+            <h5>Drives</h5>
+            <table id="group_details_drives_table" class="table table-striped" style="width:100%">
+                <thead>
+                    <tr>
+                        <th></th>
+                        <th></th>
+                        <th>Name</th>
+                        <th>Drive Type</th>
+                        <th>Web URL</th>
+                    </tr>
+                </thead>
+            </table>
+        </div>
+        <hr>
+        <div class="row" id="group_details_header_app_roles">
+            <h5>App Role Assignments</h5>
+            <table id="group_details_app_role_assignment_table" class="table table-striped" style="width:100%">
+                <thead>
+                    <tr>
+                        <th></th>
+                        <th></th>
+                        <th>Resource ID</th>
+                        <th>Resource Name</th>
+                        <th>Created</th>
+                    </tr>
+                </thead>
+            </table>
+        </div>
+        <hr>
+        <div class="row" id="group_details_header_team">
+            <h5>Team Settings</h5>
+            <div id="group_details_team" class="list-group">
+            </div>
+        </div>
+        `;
+    let modalNav = `
+        <nav id="entra_group_details_modal_navbar" class="navbar">
+          <ul class="nav nav-pills">
+            <li class="nav-item">
+              <a class="nav-link" href="#group_details_header_overview">Overview</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="#group_details_header_members">Members</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="#group_details_header_owners">Owners</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="#group_details_header_memberof">Member Of</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="#group_details_header_sites">Sites</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="#group_details_header_drives">Drives</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="#group_details_header_app_roles">App Roles</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="#group_details_header_team">Team</a>
+            </li>
+          </ul>
+        </nav>
+        `;
+    let groupDetailsModal = createModal("entra_group_details_modal", `Group details '${entraGroupDetails.displayName}'`, modalBody, "modal-xl");
+    groupDetailsModal.find(".modal-title").addClass("d-inline-block text-truncate").css("max-width", "350px");
+    groupDetailsModal.find(".modal-title").after(modalNav);
+    groupDetailsModal.find(".modal-body").attr("data-bs-spy", "scroll").attr("data-bs-target", "#entra_group_details_modal_navbar").attr("tabindex", "0");
+    groupDetailsModal.on('shown.bs.modal', function () {
+        bootstrap.ScrollSpy.getOrCreateInstance(this.querySelector('.modal-body')).refresh();
+    });
+    groupDetailsModal.modal('show');
+    function createDetailItem(key, value) {
+        let item = $('<li class="list-group-item"></li>');
+        item.append($('<b class="text-body-secondary"></b>').text(`${key}: `));
+        item.append($('<span class="text-light-emphasis"></span>').text(value));
+        return item;
+    }
+    let groupDetailsOverview = groupDetailsModal.find('#group_details_overview');
+    groupDetailsOverview.append(createDetailItem("ID", entraGroupDetails.id));
+    if (entraGroupDetails.securityIdentifier) { groupDetailsOverview.append(createDetailItem("Security ID", entraGroupDetails.securityIdentifier))};
+    groupDetailsOverview.append(createDetailItem("Display Name", entraGroupDetails.displayName));
+    if (entraGroupDetails.description) { groupDetailsOverview.append(createDetailItem("Description", entraGroupDetails.description))};
+    if (entraGroupDetails.mail) { groupDetailsOverview.append(createDetailItem("Mail", entraGroupDetails.mail))};
+    if (entraGroupDetails.mailNickname) { groupDetailsOverview.append(createDetailItem("Mail Nickname", entraGroupDetails.mailNickname))};
+    groupDetailsOverview.append(createDetailItem("Mail Enabled", entraGroupDetails.mailEnabled ? "true" : "false"));
+    groupDetailsOverview.append(createDetailItem("Security Enabled", entraGroupDetails.securityEnabled ? "true" : "false"));
+    // Apply same group type logic as in the table
+    let groupTypeLabel = "Unknown";
+    if (entraGroupDetails.groupTypes && entraGroupDetails.groupTypes instanceof Array) {
+        // Check if groupTypes contains "Unified"
+        if (entraGroupDetails.groupTypes.includes("Unified")) {
+            groupTypeLabel = "M365 Group";
+        }
+        // If security enabled, it's a Security Group
+        else if (entraGroupDetails.securityEnabled === true) {
+            groupTypeLabel = "Security Group";
+        }
+        // If mail enabled, but not security enabled, it's a Distribution Group
+        else if (entraGroupDetails.mailEnabled === true) {
+            groupTypeLabel = "Distribution Group";
+        }
+    }
+    groupDetailsOverview.append(createDetailItem("Group Type", groupTypeLabel));
+    if (entraGroupDetails.membershipRule) { groupDetailsOverview.append(createDetailItem("Membership Rule", entraGroupDetails.membershipRule))};
+    if (entraGroupDetails.createdDateTime) { groupDetailsOverview.append(createDetailItem("Created", entraGroupDetails.createdDateTime))};
+    if (entraGroupDetails.onPremisesSyncEnabled !== undefined) {
+        groupDetailsOverview.append(createDetailItem("On-Prem Synced", entraGroupDetails.onPremisesSyncEnabled ? "true" : "false"));
+        if (entraGroupDetails.onPremisesSamAccountName) { groupDetailsOverview.append(createDetailItem("On-Prem SamAccountName", entraGroupDetails.onPremisesSamAccountName))};
+        if (entraGroupDetails.onPremisesDistinguishedName) { groupDetailsOverview.append(createDetailItem("On-Prem DN", entraGroupDetails.onPremisesDistinguishedName))};
+        if (entraGroupDetails.onPremisesLastSyncDateTime) { groupDetailsOverview.append(createDetailItem("On-Prem Last Sync", entraGroupDetails.onPremisesLastSyncDateTime))};
+        if (entraGroupDetails.onPremisesSecurityIdentifier) { groupDetailsOverview.append(createDetailItem("On-Prem SID", entraGroupDetails.onPremisesSecurityIdentifier))};
+    }
+    groupDetailsModal.find('#group_details_full').append(formatJsonCode(entraGroupDetails));
+    Prism.highlightAll();
+
+    // Transitive Members Table
+    if ($.fn.dataTable.isDataTable(groupDetailsModal.find('#group_details_transitive_members_table')[0])) {
+        groupDetailsModal.find('#group_details_transitive_members_table').DataTable().destroy();
+        groupDetailsModal.find('#group_details_transitive_members_table').empty();
+    }
+    let transitiveMembersData = entraGroupDetails.transitiveMembers || [];
+    let groupDetailsTransitiveMembersTable = new DataTable(groupDetailsModal.find('#group_details_transitive_members_table')[0], {
+        data: transitiveMembersData,
+        columns: [
+            {
+                className: 'dt-control',
+                orderable: false,
+                data: null,
+                defaultContent: '',
+                'width': '20px'
+            },
+            {
+                className: 'user-details-control',
+                orderable: false,
+                data: null,
+                defaultContent: '',
+                'width': '20px',
+                render: function (d, t, r) {
+                    if (r['@odata.type'] == "#microsoft.graph.user") {
+                        return '<i class="fi fi-rr-user" style="cursor: pointer" title="View User Details"></i>';
+                    }
+                    return '';
+                }
+            },
+            { data: 'displayName', title: "Display Name" },
+            { data: 'userPrincipalName', title: "User Principal Name" },
+            { data: 'mail', title: "Mail" },
+            { 
+                data: '@odata.type', 
+                title: "Type",
+                render: function (d, t, r) {
+                    if (r['@odata.type'] == "#microsoft.graph.user") {
+                        return "User";
+                    } else if (r['@odata.type'] == "#microsoft.graph.group") {
+                        return "Group";
+                    }
+                    return r['@odata.type'] || "";
+                }
+            }
+        ],
+        autoWidth: false,
+        order: [[2, 'asc']]
+    });
+    groupDetailsTransitiveMembersTable.on('click', 'td.dt-control', function (e) {
+        let tr = e.target.closest('tr');
+        let row = groupDetailsTransitiveMembersTable.row(tr);
+        if (row.child.isShown()) {
+            row.child.hide();
+        } else {
+            row.child(formatJsonCode(row.data())).show();
+            Prism.highlightAll();
+        }
+    });
+    groupDetailsTransitiveMembersTable.on('click', 'td.user-details-control', function (e) {
+        let tr = e.target.closest('tr');
+        let row = groupDetailsTransitiveMembersTable.row(tr);
+        let memberData = row.data();
+        if (memberData && memberData.id && memberData['@odata.type'] == "#microsoft.graph.user") {
+            openUserDetailsModal(access_token_id, memberData.id);
+        }
+    });
+
+    // Owners Table
+    if ($.fn.dataTable.isDataTable(groupDetailsModal.find('#group_details_owners_table')[0])) {
+        groupDetailsModal.find('#group_details_owners_table').DataTable().destroy();
+        groupDetailsModal.find('#group_details_owners_table').empty();
+    }
+    let ownersData = entraGroupDetails.owners || [];
+    let groupDetailsOwnersTable = new DataTable(groupDetailsModal.find('#group_details_owners_table')[0], {
+        data: ownersData,
+        columns: [
+            {
+                className: 'dt-control',
+                orderable: false,
+                data: null,
+                defaultContent: '',
+                'width': '20px'
+            },
+            {
+                className: 'user-details-control',
+                orderable: false,
+                data: null,
+                defaultContent: '',
+                'width': '20px',
+                render: function (d, t, r) {
+                    if (r['@odata.type'] == "#microsoft.graph.user") {
+                        return '<i class="fi fi-rr-user" style="cursor: pointer" title="View User Details"></i>';
+                    }
+                    return '';
+                }
+            },
+            { data: 'displayName', title: "Display Name" },
+            { data: 'userPrincipalName', title: "User Principal Name" },
+            { data: 'mail', title: "Mail" },
+            { 
+                data: '@odata.type', 
+                title: "Type",
+                render: function (d, t, r) {
+                    if (r['@odata.type'] == "#microsoft.graph.user") {
+                        return "User";
+                    } else if (r['@odata.type'] == "#microsoft.graph.servicePrincipal") {
+                        return "Service Principal";
+                    }
+                    return r['@odata.type'] || "";
+                }
+            }
+        ],
+        autoWidth: false,
+        order: [[2, 'asc']]
+    });
+    groupDetailsOwnersTable.on('click', 'td.dt-control', function (e) {
+        let tr = e.target.closest('tr');
+        let row = groupDetailsOwnersTable.row(tr);
+        if (row.child.isShown()) {
+            row.child.hide();
+        } else {
+            row.child(formatJsonCode(row.data())).show();
+            Prism.highlightAll();
+        }
+    });
+    groupDetailsOwnersTable.on('click', 'td.user-details-control', function (e) {
+        let tr = e.target.closest('tr');
+        let row = groupDetailsOwnersTable.row(tr);
+        let ownerData = row.data();
+        if (ownerData && ownerData.id && ownerData['@odata.type'] == "#microsoft.graph.user") {
+            openUserDetailsModal(access_token_id, ownerData.id);
+        }
+    });
+
+    // Transitive Member Of Table
+    if ($.fn.dataTable.isDataTable(groupDetailsModal.find('#group_details_transitive_memberof_table')[0])) {
+        groupDetailsModal.find('#group_details_transitive_memberof_table').DataTable().destroy();
+        groupDetailsModal.find('#group_details_transitive_memberof_table').empty();
+    }
+    let transitiveMemberOfData = entraGroupDetails.transitiveMemberOf || [];
+    let groupDetailsTransitiveMemberOfTable = new DataTable(groupDetailsModal.find('#group_details_transitive_memberof_table')[0], {
+        data: transitiveMemberOfData,
+        columns: [
+            {
+                className: 'dt-control',
+                orderable: false,
+                data: null,
+                defaultContent: '',
+                'width': '20px'
+            },
+            {
+                className: 'placeholder-control',
+                orderable: false,
+                data: null,
+                defaultContent: '',
+                'width': '20px'
+            },
+            { data: 'displayName', title: "Display Name" },
+            { data: 'description', title: "Description" },
+            { 
+                data: 'securityEnabled', 
+                title: "Security Enabled",
+                render: function (d, t, r) {
+                    return r.securityEnabled ? "true" : "false";
+                }
+            },
+            {
+                data: null,
+                render: function (d, t, r) { return (r.membershipRule !== undefined && r.membershipRule !== null) ? "true" : "false"; },
+                title: "Dynamic",
+                width: '10px'
+            }
+        ],
+        autoWidth: false,
+        order: [[2, 'asc']]
+    });
+    groupDetailsTransitiveMemberOfTable.on('click', 'td.dt-control', function (e) {
+        let tr = e.target.closest('tr');
+        let row = groupDetailsTransitiveMemberOfTable.row(tr);
+        if (row.child.isShown()) {
+            row.child.hide();
+        } else {
+            row.child(formatJsonCode(row.data())).show();
+            Prism.highlightAll();
+        }
+    });
+
+    // Drives Table
+    if ($.fn.dataTable.isDataTable(groupDetailsModal.find('#group_details_drives_table')[0])) {
+        groupDetailsModal.find('#group_details_drives_table').DataTable().destroy();
+        groupDetailsModal.find('#group_details_drives_table').empty();
+    }
+    let drivesData = entraGroupDetails.drives || [];
+    let groupDetailsDrivesTable = new DataTable(groupDetailsModal.find('#group_details_drives_table')[0], {
+        data: drivesData,
+        columns: [
+            {
+                className: 'dt-control',
+                orderable: false,
+                data: null,
+                defaultContent: '',
+                'width': '20px'
+            },
+            {
+                className: 'placeholder-control',
+                orderable: false,
+                data: null,
+                defaultContent: '',
+                'width': '20px'
+            },
+            { data: 'name', title: "Name" },
+            { data: 'driveType', title: "Drive Type" },
+            { 
+                data: 'webUrl', 
+                title: "Web URL",
+                render: function (d, t, r) {
+                    if (r.webUrl) {
+                        return `<a href="${r.webUrl}" target="_blank">${r.webUrl}</a>`;
+                    }
+                    return "";
+                }
+            }
+        ],
+        autoWidth: false,
+        order: [[2, 'asc']]
+    });
+    groupDetailsDrivesTable.on('click', 'td.dt-control', function (e) {
+        let tr = e.target.closest('tr');
+        let row = groupDetailsDrivesTable.row(tr);
+        if (row.child.isShown()) {
+            row.child.hide();
+        } else {
+            row.child(formatJsonCode(row.data())).show();
+            Prism.highlightAll();
+        }
+    });
+
+    // Team Section
+    let teamData = entraGroupDetails.team || {};
+    let groupDetailsTeam = groupDetailsModal.find('#group_details_team');
+    if (teamData && Object.keys(teamData).length > 0) {
+        groupDetailsTeam.append(formatJsonCode(teamData));
+        Prism.highlightAll();
+    } else {
+        groupDetailsTeam.append($('<p class="text-muted"></p>').text("No team associated with this group."));
+    }
+
+    // Sites Table
+    if ($.fn.dataTable.isDataTable(groupDetailsModal.find('#group_details_sites_table')[0])) {
+        groupDetailsModal.find('#group_details_sites_table').DataTable().destroy();
+        groupDetailsModal.find('#group_details_sites_table').empty();
+    }
+    let sitesData = entraGroupDetails.sites || [];
+    let groupDetailsSitesTable = new DataTable(groupDetailsModal.find('#group_details_sites_table')[0], {
+        data: sitesData,
+        columns: [
+            {
+                className: 'dt-control',
+                orderable: false,
+                data: null,
+                defaultContent: '',
+                'width': '20px'
+            },
+            {
+                className: 'placeholder-control',
+                orderable: false,
+                data: null,
+                defaultContent: '',
+                'width': '20px'
+            },
+            { data: 'displayName', title: "Display Name" },
+            { 
+                data: 'webUrl', 
+                title: "Web URL",
+                render: function (d, t, r) {
+                    if (r.webUrl) {
+                        return `<a href="${r.webUrl}" target="_blank">${r.webUrl}</a>`;
+                    }
+                    return "";
+                }
+            },
+            { data: 'description', title: "Description" }
+        ],
+        autoWidth: false,
+        order: [[2, 'asc']]
+    });
+    groupDetailsSitesTable.on('click', 'td.dt-control', function (e) {
+        let tr = e.target.closest('tr');
+        let row = groupDetailsSitesTable.row(tr);
+        if (row.child.isShown()) {
+            row.child.hide();
+        } else {
+            row.child(formatJsonCode(row.data())).show();
+            Prism.highlightAll();
+        }
+    });
+
+    // App Role Assignments Table
+    if ($.fn.dataTable.isDataTable(groupDetailsModal.find('#group_details_app_role_assignment_table')[0])) {
+        groupDetailsModal.find('#group_details_app_role_assignment_table').DataTable().destroy();
+        groupDetailsModal.find('#group_details_app_role_assignment_table').empty();
+    }
+    let appRoleAssignmentsData = entraGroupDetails.appRoleAssignments || [];
+    let groupDetailsAppRoleAssignmentTable = new DataTable(groupDetailsModal.find('#group_details_app_role_assignment_table')[0], {
+        data: appRoleAssignmentsData,
+        columns: [
+            {
+                className: 'dt-control',
+                orderable: false,
+                data: null,
+                defaultContent: '',
+                'width': '20px'
+            },
+            {
+                className: 'placeholder-control',
+                orderable: false,
+                data: null,
+                defaultContent: '',
+                'width': '20px'
+            },
+            { data: 'resourceId', title: "Resource ID", width: "320px" },
+            { data: 'resourceDisplayName', title: "Resource Name" },
+            { data: 'createdDateTime', title: "Created" }
+        ],
+        autoWidth: false,
+        order: [[2, 'asc']]
+    });
+    groupDetailsAppRoleAssignmentTable.on('click', 'td.dt-control', function (e) {
+        let tr = e.target.closest('tr');
+        let row = groupDetailsAppRoleAssignmentTable.row(tr);
+        if (row.child.isShown()) {
+            row.child.hide();
+        } else {
             row.child(formatJsonCode(row.data())).show();
             Prism.highlightAll();
         }
@@ -1186,8 +1760,13 @@ function bootstrapToast(title, message, type = null, alternative = false) {
 // ========== Modals ==========
 
 function createModal(modalID, modalTitle, modalBody, modalSize = "modal-xl") {
-    // If a modal with the same ID already exists, delete it first
-    $(`div.modal#${modalID}`).remove();
+    // Generate unique modal ID if one with the same ID already exists
+    let uniqueModalID = modalID;
+    let counter = 1;
+    while ($(`div.modal#${uniqueModalID}`).length > 0) {
+        uniqueModalID = `${modalID}_${counter}`;
+        counter++;
+    }
     let modalWrapper = $(`
     <div class="modal fade" id="" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-scrollable">
@@ -1208,7 +1787,7 @@ function createModal(modalID, modalTitle, modalBody, modalSize = "modal-xl") {
         </div>
     </div>
     `);
-    modalWrapper.attr('id', modalID);
+    modalWrapper.attr('id', uniqueModalID);
     modalWrapper.find('h1.modal-title').text(modalTitle);
     modalSize = ['modal-sm', 'modal-md', 'modal-lg', 'modal-xl'].includes(modalSize) ? modalSize : "modal-xl";
     modalWrapper.find('div.modal-dialog').addClass(modalSize);

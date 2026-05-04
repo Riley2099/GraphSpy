@@ -116,3 +116,8 @@ def teams():
 @bp.route("/entra_users")
 def entra_users():
     return render_template("entra_users.html", title="Entra ID Users")
+
+
+@bp.route("/entra_groups")
+def entra_groups():
+    return render_template("entra_groups.html", title="Entra ID Groups")
