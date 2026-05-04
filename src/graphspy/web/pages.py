@@ -12,7 +12,7 @@ bp = Blueprint("pages", __name__, template_folder="templates", static_folder="st
 @bp.route("/favicon.ico")
 def favicon():
     return send_from_directory(
-        os.path.join(bp.root_path, "web", "static"),
+        os.path.join(bp.root_path, "static"),
         "favicon.ico",
         mimetype="image/vnd.microsoft.icon",
     )
