@@ -80,3 +80,10 @@ def update_db() -> None:
         execute_db("ALTER TABLE mfa_otp_new RENAME TO mfa_otp")
         execute_db("UPDATE settings SET value = '7' WHERE setting = 'schema_version'")
         logger.info("Updated database to schema version 7")
+        current_version = _current_version()
+
+    if current_version == "7":
+        logger.info("Updating database schema version 7 -> 8")
+        execute_db("ALTER TABLE devicecodes ADD COLUMN tenant TEXT DEFAULT 'common'")
+        execute_db("UPDATE settings SET value = '8' WHERE setting = 'schema_version'")
+        logger.info("Updated database to schema version 8")

@@ -35,6 +35,7 @@ def generate_device_code():
     )
     ngcmfa = request.form.get("ngcmfa") == "true"
     cae = request.form.get("cae") == "true"
+    tenant = request.form.get("tenant") or "common"
     auto_action = request.form.get("auto_action")
     if auto_action and auto_action != "none":
         user_code = device_codes.flow(
@@ -44,6 +45,7 @@ def generate_device_code():
             scope,
             ngcmfa,
             cae,
+            tenant,
             auto_action=auto_action,
             auto_device_name=request.form.get("auto_device_name") or "GraphSpy-Device",
             auto_join_type=int(request.form.get("auto_join_type", 0)),
@@ -52,7 +54,7 @@ def generate_device_code():
             auto_target_domain=request.form.get("auto_target_domain") or "e-corp.local",
         )
     else:
-        user_code = device_codes.flow(version, client_id, resource, scope, ngcmfa, cae)
+        user_code = device_codes.flow(version, client_id, resource, scope, ngcmfa, cae, tenant)
     return user_code
 
 

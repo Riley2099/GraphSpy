@@ -63,16 +63,31 @@
                 <span class="input-group-text">Client ID</span>
                 <input list="client_id_list" id="client_id_input" class="form-control" placeholder="d3590ed6-52b3-4102-aeff-aad2292ab01c">
                 <datalist id="client_id_list">
-                    <option value="d3590ed6-52b3-4102-aeff-aad2292ab01c">Microsoft Office</option>
-                    <option value="1fec8e78-bce4-4aaf-ab1b-5451cc387264">Microsoft Teams</option>
-                    <option value="27922004-5251-4030-b22d-91ecd9a37ea4">Outlook Mobile</option>
-                    <option value="b26aadf8-566f-4478-926f-589f601d9c74">OneDrive</option>
-                    <option value="d326c1ce-6cc6-4de2-bebc-4591e5e13ef0">SharePoint</option>
+                    <option value="d3590ed6-52b3-4102-aeff-aad2292ab01c">Microsoft Office (work/school only)</option>
+                    <option value="1fec8e78-bce4-4aaf-ab1b-5451cc387264">Microsoft Teams (work/school only)</option>
+                    <option value="27922004-5251-4030-b22d-91ecd9a37ea4">Outlook Mobile (work/school only)</option>
+                    <option value="b26aadf8-566f-4478-926f-589f601d9c74">OneDrive (work/school only)</option>
+                    <option value="d326c1ce-6cc6-4de2-bebc-4591e5e13ef0">SharePoint (work/school only)</option>
                     <option value="00b41c95-dab0-4487-9791-b9d2c32c80f2">Office 365 Management</option>
-                    <option value="04b07795-8ddb-461a-bbee-02f9e1bf7b46">Microsoft Azure CLI</option>
-                    <option value="1950a258-227b-4e31-a9cf-717495945fc2">Microsoft Azure PowerShell</option>
+                    <option value="04b07795-8ddb-461a-bbee-02f9e1bf7b46">Microsoft Azure CLI (personal + work)</option>
+                    <option value="1950a258-227b-4e31-a9cf-717495945fc2">Microsoft Azure PowerShell (personal + work)</option>
                     <option value="29d9ed98-a469-4536-ade2-f981bc1d605e">Microsoft Authentication Broker</option>
+                    <option value="9ba1a5c7-f17a-4de9-a1f1-6178c8d51223">Microsoft Authenticator (personal + work)</option>
                 </datalist>
+            </div>
+        </div>
+        <div class="col-12">
+            <div class="input-group">
+                <label class="input-group-text" for="tenant_select">Tenant</label>
+                <select id="tenant_select" class="form-select">
+                    <option value="common">common — Work/school + personal (app must support both)</option>
+                    <option value="organizations">organizations — Work/school accounts only</option>
+                    <option value="consumers">consumers — Personal accounts only (outlook.com, hotmail, live)</option>
+                </select>
+            </div>
+            <div class="form-text text-muted small">
+                <i class="fi fi-rr-info" style="vertical-align: -0.15em"></i>
+                Use <b>consumers</b> for personal Microsoft accounts. Pair with Azure CLI or Authenticator client ID.
             </div>
         </div>
         <div>
@@ -315,14 +330,16 @@
 
     function generateDeviceCodeButton(){
         const autoAction = $('input[name="auto_action_radio"]:checked').val();
-        
+        const tenant = $('#tenant_select').val() || "common";
+
         generateDeviceCode(
-            parseInt($('#api_version input:radio:checked').val()), 
-            client_id_input.value, 
+            parseInt($('#api_version input:radio:checked').val()),
+            client_id_input.value,
             resource_input.value,
             scope_input.value,
             ngcmfa_checkbox.checked,
             cae_checkbox.checked,
+            tenant,
             autoAction !== "none" ? autoAction : undefined,
             autoAction !== "none" ? $("#device_name").val() : undefined,
             autoAction !== "none" ? $("#join_type").val() : undefined,

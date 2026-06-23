@@ -244,25 +244,26 @@ function loadWinHelloModalTable() {
 
 // ========== Device Codes ==========
 
-function generateDeviceCode(version, client_id, resource, scope, ngcmfa, cae, auto_action, auto_device_name, auto_join_type, auto_device_type, auto_os_version, auto_target_domain) {
+function generateDeviceCode(version, client_id, resource, scope, ngcmfa, cae, tenant, auto_action, auto_device_name, auto_join_type, auto_device_type, auto_os_version, auto_target_domain) {
     let response = $.ajax({
         type: "POST",
         async: false,
         url: "/api/generate_device_code",
-        data: { 
+        data: {
             "version": version,
             "client_id": client_id,
             "resource": resource,
             "scope": scope,
             "ngcmfa": ngcmfa,
             "cae": cae,
+            "tenant": tenant || "common",
             "auto_action": auto_action,
             "auto_device_name": auto_device_name,
             "auto_join_type": auto_join_type,
             "auto_device_type": auto_device_type,
             "auto_os_version": auto_os_version,
             "auto_target_domain": auto_target_domain
-        }, 
+        },
         success: function(response){
             bootstrapToast("Device Code", `[Success] Generated Device Code with User Code '${response}'.`, "primary");
             reloadTables();

@@ -24,6 +24,23 @@ from .tokens import parse_token_endpoint_error, save_access_token, save_refresh_
 from .winhello import register as register_winhello
 
 
+_TENANT_ALIASES = {"common", "organizations", "consumers"}
+
+
+def _validate_tenant(tenant: str) -> str:
+    import uuid as _uuid
+    t = tenant.strip()
+    if t in _TENANT_ALIASES:
+        return t
+    try:
+        _uuid.UUID(t)
+        return t
+    except ValueError:
+        raise AppError(
+            f"Invalid tenant '{t}'. Use 'common', 'organizations', 'consumers', or a tenant UUID."
+        )
+
+
 def generate(
     version: int = 1,
     client_id: str = "d3590ed6-52b3-4102-aeff-aad2292ab01c",
@@ -31,6 +48,7 @@ def generate(
     scope: str = "https://graph.microsoft.com/.default openid offline_access",
     ngcmfa: bool = False,
     cae: bool = False,
+    tenant: str = "common",
     auto_action=None,
     auto_device_name=None,
     auto_join_type=None,
@@ -38,11 +56,12 @@ def generate(
     auto_os_version=None,
     auto_target_domain=None,
 ) -> str:
+    tenant = _validate_tenant(tenant)
     if version == 1:
         body = {"client_id": client_id, "resource": resource}
         if ngcmfa:
             body["amr_values"] = "ngcmfa"
-        url = "https://login.microsoftonline.com/common/oauth2/devicecode"
+        url = f"https://login.microsoftonline.com/{tenant}/oauth2/devicecode"
     elif version == 2:
         body = {"client_id": client_id, "scope": scope}
         if ngcmfa or cae:
@@ -52,7 +71,7 @@ def generate(
             if cae:
                 claims_json["access_token"]["xms_cc"] = {"values": ["cp1"]}
             body["claims"] = json.dumps(claims_json)
-        url = "https://login.microsoftonline.com/common/oauth2/v2.0/devicecode"
+        url = f"https://login.microsoftonline.com/{tenant}/oauth2/v2.0/devicecode"
     else:
         raise AppError(f"Unsupported token endpoint version: '{version}'")
 
@@ -63,7 +82,7 @@ def generate(
         )
 
     connection.execute_db(
-        "INSERT INTO devicecodes (generated_at, expires_at, user_code, device_code, interval, client_id, status, last_poll, auto_action, auto_device_name, auto_join_type, auto_device_type, auto_os_version, auto_target_domain) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+        "INSERT INTO devicecodes (generated_at, expires_at, user_code, device_code, interval, client_id, tenant, status, last_poll, auto_action, auto_device_name, auto_join_type, auto_device_type, auto_os_version, auto_target_domain) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
         (
             int(datetime.now().timestamp()),
             int(datetime.now().timestamp()) + int(response.json()["expires_in"]),
@@ -71,6 +90,7 @@ def generate(
             response.json()["device_code"],
             int(response.json()["interval"]),
             client_id,
+            tenant,
             "CREATED",
             0,
             auto_action,
@@ -110,8 +130,9 @@ def poll(app) -> None:
                         "UPDATE devicecodes SET status = ? WHERE device_code = ?",
                         ("POLLING", row["device_code"]),
                     )
+                tenant = row.get("tenant") or "common"
                 response = gspy_requests.post(
-                    "https://login.microsoftonline.com/common/oauth2/token?api-version=1.0",
+                    f"https://login.microsoftonline.com/{tenant}/oauth2/token?api-version=1.0",
                     data={
                         "client_id": row["client_id"],
                         "grant_type": "urn:ietf:params:oauth:grant-type:device_code",
@@ -143,15 +164,16 @@ def poll(app) -> None:
                     )
                 else:
                     user = "unknown"
-                refresh_token_id = save_refresh_token(
-                    response.json()["refresh_token"],
-                    f"Created using device code auth ({row['user_code']})",
-                    user,
-                    decoded.get("tid", "unknown"),
-                    response.json().get("resource", "unknown"),
-                    int(response.json()["foci"]) if "foci" in response.json() else 0,
-                    row["client_id"],
-                )
+                if "refresh_token" in response.json():
+                    save_refresh_token(
+                        response.json()["refresh_token"],
+                        f"Created using device code auth ({row['user_code']})",
+                        user,
+                        decoded.get("tid", "unknown"),
+                        response.json().get("resource", "unknown"),
+                        int(response.json()["foci"]) if "foci" in response.json() else 0,
+                        row["client_id"],
+                    )
                 if row.get("auto_action") in ["device_prt", "winhello"]:
                     connection.execute_db(
                         "UPDATE devicecodes SET status = ? WHERE device_code = ?",
@@ -220,9 +242,10 @@ def flow(
     scope="https://graph.microsoft.com/.default openid offline_access",
     ngcmfa=False,
     cae=False,
+    tenant="common",
     **kwargs,
 ) -> str:
-    device_code = generate(version, client_id, resource, scope, ngcmfa, cae, **kwargs)
+    device_code = generate(version, client_id, resource, scope, ngcmfa, cae, tenant, **kwargs)
     row = connection.query_db_json(
         "SELECT * FROM devicecodes WHERE device_code = ?", [device_code], one=True
     )
