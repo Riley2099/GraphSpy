@@ -44,7 +44,10 @@ def decode_token(id):
     )
     if not row:
         return f"[Error] Could not find access token with id {id}", 400
-    decoded = jwt.decode(row[0], options={"verify_signature": False})
+    try:
+        decoded = jwt.decode(row[0], options={"verify_signature": False})
+    except Exception as e:
+        return f"[Error] Failed to decode token: {e}", 400
     return decoded
 
 

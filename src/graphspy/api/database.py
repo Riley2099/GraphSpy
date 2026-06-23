@@ -64,7 +64,7 @@ def duplicate_database():
     if not os.path.exists(db_path):
         return f"[Error] Database file '{db_path}' not found."
     for i in range(1, 100):
-        new_path = f"{db_path.rstrip('.db')}_{i}.db"
+        new_path = f"{db_path.removesuffix('.db')}_{i}.db"
         if not os.path.exists(new_path):
             shutil.copy2(db_path, new_path)
             return f"[Success] Duplicated '{database_name}' to '{os.path.basename(new_path)}'."

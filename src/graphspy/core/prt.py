@@ -74,28 +74,22 @@ def request_for_device(
     device_id: str, refresh_token_id: int, os_version: str = "10.0.26100"
 ) -> int:
     nonce = get_srv_challenge_nonce()
-    refresh_token = connection.query_db(
-        "SELECT refreshtoken FROM refreshtokens WHERE id = ?",
+    _rt_row = connection.query_db(
+        "SELECT refreshtoken, user FROM refreshtokens WHERE id = ?",
         [refresh_token_id],
         one=True,
-    )[0]
-    refresh_token_user = connection.query_db(
-        "SELECT user FROM refreshtokens WHERE id = ?", [refresh_token_id], one=True
-    )[0]
-    if not refresh_token:
+    )
+    if not _rt_row:
         raise AppError(f"No refresh token with ID {refresh_token_id}!")
-    certificate_base64 = connection.query_db(
-        "SELECT certificate FROM device_certificates WHERE device_id = ?",
+    refresh_token, refresh_token_user = _rt_row[0], _rt_row[1]
+    _cert_row = connection.query_db(
+        "SELECT certificate, priv_key FROM device_certificates WHERE device_id = ?",
         [device_id],
         one=True,
-    )[0]
-    private_key_base64 = connection.query_db(
-        "SELECT priv_key FROM device_certificates WHERE device_id = ?",
-        [device_id],
-        one=True,
-    )[0]
-    if not certificate_base64 or not private_key_base64:
+    )
+    if not _cert_row or not _cert_row[0] or not _cert_row[1]:
         raise AppError(f"No certificate or private key for device {device_id}!")
+    certificate_base64, private_key_base64 = _cert_row[0], _cert_row[1]
     private_key = serialization.load_pem_private_key(
         base64.b64decode(private_key_base64), password=None
     )

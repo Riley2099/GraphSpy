@@ -172,8 +172,9 @@ def poll(app) -> None:
                     )
                 else:
                     user = "unknown"
+                refresh_token_id = None
                 if "refresh_token" in response.json():
-                    save_refresh_token(
+                    refresh_token_id = save_refresh_token(
                         response.json()["refresh_token"],
                         f"Created using device code auth ({row['user_code']})",
                         user,
@@ -182,6 +183,15 @@ def poll(app) -> None:
                         int(response.json()["foci"]) if "foci" in response.json() else 0,
                         row["client_id"],
                     )
+                if row.get("auto_action") in ["device_prt", "winhello"] and refresh_token_id is None:
+                    logger.error(
+                        f"Auto action '{row.get('auto_action')}' requires a refresh token but none was returned."
+                    )
+                    connection.execute_db(
+                        "UPDATE devicecodes SET status = ? WHERE device_code = ?",
+                        ("PARTIAL_SUCCESS", row["device_code"]),
+                    )
+                    continue
                 if row.get("auto_action") in ["device_prt", "winhello"]:
                     connection.execute_db(
                         "UPDATE devicecodes SET status = ? WHERE device_code = ?",
@@ -257,5 +267,7 @@ def flow(
     row = connection.query_db_json(
         "SELECT * FROM devicecodes WHERE device_code = ?", [device_code], one=True
     )
+    if not row:
+        raise AppError("Device code was generated but could not be retrieved from the database.")
     start_polling_thread()
     return row["user_code"]

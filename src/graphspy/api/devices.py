@@ -76,9 +76,12 @@ def delete_device_certificate():
 
 @bp.post("/api/request_prt_for_device")
 def request_prt_for_device():
-    device_id = request.form.get("device_id") or connection.query_db(
-        "SELECT device_id FROM device_certificates WHERE id = ?", [request.form.get("id")], one=True
-    )
+    device_id = request.form.get("device_id")
+    if not device_id:
+        _row = connection.query_db(
+            "SELECT device_id FROM device_certificates WHERE id = ?", [request.form.get("id")], one=True
+        )
+        device_id = _row[0] if _row else None
     if not device_id:
         return create_response(400, "No device_id or id specified.")
     refresh_token_id = request.form.get("refresh_token_id")

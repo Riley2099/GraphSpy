@@ -116,31 +116,19 @@ def refresh_to_access_token(
     store_refresh_token: bool = True,
     api_version: int = 1,
 ) -> int:
-    refresh_token = connection.query_db(
-        "SELECT refreshtoken FROM refreshtokens WHERE id = ?",
+    _rt_row = connection.query_db(
+        "SELECT refreshtoken, tenant_id, resource, client_id FROM refreshtokens WHERE id = ?",
         [refresh_token_id],
         one=True,
-    )[0]
-    tenant_id = (
-        connection.query_db(
-            "SELECT tenant_id FROM refreshtokens WHERE id = ?",
-            [refresh_token_id],
-            one=True,
-        )[0]
-        or "common"
     )
+    if not _rt_row:
+        return f"[Error] No refresh token with ID {refresh_token_id} found."
+    refresh_token = _rt_row[0]
+    tenant_id = _rt_row[1] or "common"
     if resource == "defined_in_token":
-        resource = connection.query_db(
-            "SELECT resource FROM refreshtokens WHERE id = ?",
-            [refresh_token_id],
-            one=True,
-        )[0]
+        resource = _rt_row[2]
     if client_id == "defined_in_token":
-        client_id = connection.query_db(
-            "SELECT client_id FROM refreshtokens WHERE id = ?",
-            [refresh_token_id],
-            one=True,
-        )[0]
+        client_id = _rt_row[3]
 
     body = {
         "client_id": client_id,
