@@ -157,7 +157,7 @@ def refresh_to_access_token(
 
     response = gspy_requests.post(url, data=body, headers={"User-Agent": ua.get()})
     if response.status_code != 200:
-        return {parse_token_endpoint_error(response)}
+        return parse_token_endpoint_error(response)
 
     access_token = response.json()["access_token"]
     save_access_token(access_token, f"Created using refresh token {refresh_token_id}")
@@ -165,7 +165,7 @@ def refresh_to_access_token(
         "SELECT id FROM accesstokens WHERE accesstoken = ?", [access_token], one=True
     )[0]
 
-    if store_refresh_token:
+    if store_refresh_token and "refresh_token" in response.json():
         decoded = jwt.decode(access_token, options={"verify_signature": False})
         idtyp = decoded.get("idtyp")
         if idtyp == "user":

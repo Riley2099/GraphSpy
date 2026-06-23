@@ -111,7 +111,7 @@ def poll(app) -> None:
                         ("POLLING", row["device_code"]),
                     )
                 response = gspy_requests.post(
-                    "https://login.microsoftonline.com/Common/oauth2/token?api-version=1.0",
+                    "https://login.microsoftonline.com/common/oauth2/token?api-version=1.0",
                     data={
                         "client_id": row["client_id"],
                         "grant_type": "urn:ietf:params:oauth:grant-type:device_code",

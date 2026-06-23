@@ -126,13 +126,13 @@ def _get_security_info_error(error_id):
 
 def get_session_ctx(access_token_id: int):
     row = connection.query_db(
-        "SELECT accesstoken FROM accesstokens WHERE id = ? AND resource LIKE '%19db86c3-b2b9-44cc-b339-36da233a3be2%'",
+        "SELECT accesstoken FROM accesstokens WHERE id = ? AND (resource LIKE '%19db86c3-b2b9-44cc-b339-36da233a3be2%' OR resource LIKE '%mysignins.microsoft.com%')",
         [access_token_id],
         one=True,
     )
     if not row:
         logger.error(
-            f"No access token with ID {access_token_id} and resource containing '19db86c3-b2b9-44cc-b339-36da233a3be2'!"
+            f"No access token with ID {access_token_id} and resource containing '19db86c3-b2b9-44cc-b339-36da233a3be2' or 'mysignins.microsoft.com'!"
         )
         return False
     try:
@@ -156,7 +156,7 @@ def get_session_ctx(access_token_id: int):
 
 def _get_access_token_for_mfa(access_token_id: int):
     row = connection.query_db(
-        "SELECT accesstoken FROM accesstokens WHERE id = ? AND resource LIKE '%19db86c3-b2b9-44cc-b339-36da233a3be2%'",
+        "SELECT accesstoken FROM accesstokens WHERE id = ? AND (resource LIKE '%19db86c3-b2b9-44cc-b339-36da233a3be2%' OR resource LIKE '%mysignins.microsoft.com%')",
         [access_token_id],
         one=True,
     )
@@ -509,11 +509,11 @@ def add_security_key(
     access_token = _get_access_token_for_mfa(access_token_id)
     if not access_token:
         logger.error(
-            f"No access token with ID {access_token_id} and resource containing '19db86c3-b2b9-44cc-b339-36da233a3be2'!"
+            f"No access token with ID {access_token_id} and resource containing '19db86c3-b2b9-44cc-b339-36da233a3be2' or 'mysignins.microsoft.com'!"
         )
         return create_response(
             400,
-            f"No access token with ID {access_token_id} and resource containing '19db86c3-b2b9-44cc-b339-36da233a3be2'!",
+            f"No access token with ID {access_token_id} and resource containing '19db86c3-b2b9-44cc-b339-36da233a3be2' or 'mysignins.microsoft.com'!",
         )
 
     security_info_response = add_security_info(access_token_id, 12)

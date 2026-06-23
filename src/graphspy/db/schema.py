@@ -23,7 +23,7 @@ def init_db(db_path: str) -> None:
         "CREATE TABLE teams_settings (access_token_id INTEGER PRIMARY KEY, skypeToken TEXT, skype_id TEXT, issued_at INTEGER, expires_at INTEGER, teams_settings_raw TEXT)"
     )
     con.execute(
-        "CREATE TABLE mfa_otp (id INTEGER PRIMARY KEY AUTOINCREMENT, stored_at TEXT, secret_key TEXT, account_name INTEGER, description TEXT)"
+        "CREATE TABLE mfa_otp (id INTEGER PRIMARY KEY AUTOINCREMENT, stored_at TEXT, secret_key TEXT, account_name TEXT, description TEXT)"
     )
     con.execute(
         "CREATE TABLE device_certificates (id INTEGER PRIMARY KEY AUTOINCREMENT, stored_at INTEGER, device_id TEXT, device_name TEXT, device_type TEXT, join_type TEXT, priv_key TEXT, certificate TEXT)"
@@ -35,6 +35,6 @@ def init_db(db_path: str) -> None:
         "CREATE TABLE winhello_keys (id INTEGER PRIMARY KEY AUTOINCREMENT, stored_at INTEGER, key_id TEXT, device_id TEXT, user TEXT, priv_key TEXT)"
     )
     con.execute("CREATE TABLE settings (setting TEXT UNIQUE, value TEXT)")
-    con.execute("INSERT INTO settings (setting, value) VALUES ('schema_version', '6')")
+    con.execute("INSERT INTO settings (setting, value) VALUES ('schema_version', '7')")
     con.commit()
     con.close()

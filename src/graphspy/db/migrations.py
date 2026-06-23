@@ -38,7 +38,7 @@ def update_db() -> None:
     if current_version == "3":
         logger.info("Updating database schema version 3 -> 4")
         execute_db(
-            "CREATE TABLE mfa_otp (id INTEGER PRIMARY KEY AUTOINCREMENT, stored_at TEXT, secret_key TEXT, account_name INTEGER, description TEXT)"
+            "CREATE TABLE mfa_otp (id INTEGER PRIMARY KEY AUTOINCREMENT, stored_at TEXT, secret_key TEXT, account_name TEXT, description TEXT)"
         )
         execute_db("UPDATE settings SET value = '4' WHERE setting = 'schema_version'")
         logger.info("Updated database to schema version 4")
@@ -70,3 +70,13 @@ def update_db() -> None:
         execute_db("ALTER TABLE devicecodes ADD COLUMN auto_target_domain TEXT")
         execute_db("UPDATE settings SET value = '6' WHERE setting = 'schema_version'")
         logger.info("Updated database to schema version 6")
+        current_version = _current_version()
+
+    if current_version == "6":
+        logger.info("Updating database schema version 6 -> 7")
+        execute_db("CREATE TABLE mfa_otp_new (id INTEGER PRIMARY KEY AUTOINCREMENT, stored_at TEXT, secret_key TEXT, account_name TEXT, description TEXT)")
+        execute_db("INSERT INTO mfa_otp_new SELECT id, stored_at, secret_key, CAST(account_name AS TEXT), description FROM mfa_otp")
+        execute_db("DROP TABLE mfa_otp")
+        execute_db("ALTER TABLE mfa_otp_new RENAME TO mfa_otp")
+        execute_db("UPDATE settings SET value = '7' WHERE setting = 'schema_version'")
+        logger.info("Updated database to schema version 7")
