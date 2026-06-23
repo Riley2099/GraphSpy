@@ -22,17 +22,41 @@
         </div>
         <div>
             <input type="hidden" id="code" name="code" value="anything">
-            <button type="submit" class="btn btn-primary" id="submit">Open outlook</button>
+            <button type="submit" class="btn btn-primary" id="submit">Open Outlook</button>
+        </div>
+        <div>
+            <small id="account_type_hint" class="text-muted"></small>
         </div>
     </form>
     <script>
+        const MSA_TENANT_ID = "9188040d-6c67-4c5b-b112-36a304b66dad";
+
+        function decodeJwtPayload(token) {
+            try {
+                const base64 = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+                return JSON.parse(atob(base64));
+            } catch (e) {
+                return null;
+            }
+        }
+
         function fillAccessToken(form) {
             let response = $.ajax({
                 type: "GET",
                 async: false,
                 url: "/api/get_access_token/" + form.access_token_id.value
             });
-            document.getElementById("outlook_form").id_token.value = JSON.parse(response.responseText).accesstoken
+            const token = JSON.parse(response.responseText).accesstoken;
+            document.getElementById("outlook_form").id_token.value = token;
+
+            const payload = decodeJwtPayload(token);
+            if (payload && payload.tid === MSA_TENANT_ID) {
+                document.getElementById("outlook_form").action = "https://outlook.live.com/owa/";
+                document.getElementById("account_type_hint").textContent = "Personal account detected — submitting to outlook.live.com";
+            } else {
+                document.getElementById("outlook_form").action = "https://outlook.office365.com/owa/";
+                document.getElementById("account_type_hint").textContent = "Work/school account detected — submitting to outlook.office365.com";
+            }
         };
         getActiveAccessToken(document.getElementById("access_token_form").access_token_id)
         fillAccessToken(document.getElementById("access_token_form"))
