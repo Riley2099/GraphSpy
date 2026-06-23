@@ -46,15 +46,18 @@
                 <span class="input-group-text">Scope</span>
                 <input list="scope_list" id="scope_input" class="form-control" placeholder="https://graph.microsoft.com/.default openid offline_access">
                 <datalist id="scope_list">
-                    <option value="https://graph.microsoft.com/.default openid offline_access">MSGraph</option>
-                    <option value="https://graph.windows.net/.default openid offline_access">AAD Graph</option>
-                    <option value="https://outlook.office365.com/.default openid offline_access">Outlook</option>
-                    <option value="https://api.spaces.skype.com/.default openid offline_access">MSTeams</option>
+                    <option value="https://graph.microsoft.com/.default openid offline_access">MSGraph (work/school)</option>
+                    <option value="https://graph.windows.net/.default openid offline_access">AAD Graph (work/school)</option>
+                    <option value="https://outlook.office365.com/.default openid offline_access">Outlook (work/school)</option>
+                    <option value="https://api.spaces.skype.com/.default openid offline_access">MSTeams (work/school)</option>
                     <option value="https://management.core.windows.net/.default openid offline_access">AzureCoreManagement</option>
                     <option value="https://management.azure.com/.default openid offline_access">AzureManagement</option>
                     <option value="19db86c3-b2b9-44cc-b339-36da233a3be2/.default openid offline_access">My Signins</option>
                     <option value="01fc33a7-78ba-4d2f-a4b7-768e336e890e/.default openid offline_access">MS-PIM</option>
                     <option value="urn:ms-drs:enterpriseregistration.windows.net/.default openid offline_access">Entra ID Device Join</option>
+                    <option value="openid offline_access">Personal — basic (consumers)</option>
+                    <option value="https://graph.microsoft.com/Mail.Read https://graph.microsoft.com/Mail.Send openid offline_access">Personal — Mail read+send (consumers)</option>
+                    <option value="https://graph.microsoft.com/Files.ReadWrite openid offline_access">Personal — OneDrive (consumers)</option>
                 </datalist>
             </div>
         </div>

@@ -57,6 +57,9 @@ def generate(
     auto_target_domain=None,
 ) -> str:
     tenant = _validate_tenant(tenant)
+    # consumers/organizations aliases are v2-only; force v2 regardless of caller choice
+    if tenant in ("consumers", "organizations"):
+        version = 2
     if version == 1:
         body = {"client_id": client_id, "resource": resource}
         if ngcmfa:
@@ -131,8 +134,13 @@ def poll(app) -> None:
                         ("POLLING", row["device_code"]),
                     )
                 tenant = row.get("tenant") or "common"
+                # consumers/organizations require the v2 token endpoint
+                if tenant in ("consumers", "organizations"):
+                    poll_url = f"https://login.microsoftonline.com/{tenant}/oauth2/v2.0/token"
+                else:
+                    poll_url = f"https://login.microsoftonline.com/{tenant}/oauth2/token?api-version=1.0"
                 response = gspy_requests.post(
-                    f"https://login.microsoftonline.com/{tenant}/oauth2/token?api-version=1.0",
+                    poll_url,
                     data={
                         "client_id": row["client_id"],
                         "grant_type": "urn:ietf:params:oauth:grant-type:device_code",
